@@ -1,0 +1,21 @@
+datasource db {
+    provider = "sqlite"
+    url      = "file:dev.db"
+}
+
+generator db {
+    provider = "go run github.com/prisma/prisma-client-go"
+    package  = "db"
+}
+
+model User {
+    id        String   @id @default(cuid())
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+    username  String @unique
+    email     String @unique
+    password  String
+    isTeacher Boolean  @default(false)
+    verified  Boolean  @default(false)
+    emailCode String   @default("6969")
+}
