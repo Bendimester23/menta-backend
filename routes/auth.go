@@ -26,7 +26,7 @@ func HandleAuth_Register(c *fiber.Ctx) error {
 
 	res, err := authController.RegisterUser(data)
 	if err != nil {
-		return c.Status(err.Code).Send([]byte(err.Message))
+		return c.Status(err.Code).SendString(err.Message)
 	}
 
 	return c.JSON(fiber.Map{
@@ -66,14 +66,22 @@ func HandleAuth_Login(c *fiber.Ctx) error {
 		return c.Status(err.Code).SendString(err.Message)
 	}
 
+	refreshToken, err := authController.CreateRefreshToken(res.ID)
+	if err != nil {
+		return c.Status(err.Code).SendString(err.Message)
+	}
+
 	return c.JSON(fiber.Map{
-		"token": token,
-		"user":  res,
+		"access_token":  token,
+		"refresh_token": refreshToken,
 	})
 }
 
 func HandleAuth_Refresh(c *fiber.Ctx) error {
-	return c.SendString(`asd`)
+	return c.JSON(fiber.Map{
+		"access_token":  "asd",
+		"refresh_token": "asd",
+	})
 }
 
 //TODO: delete cuz it is unneseceary

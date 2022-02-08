@@ -1,6 +1,6 @@
 datasource db {
-    provider = "sqlite"
-    url      = "file:dev.db"
+    provider = "postgres"
+    url      = "postgresql://bm:CPgjRwY4Lrqu6gk@zeus.bendi.cf:5432/bluementa"
 }
 
 generator db {
@@ -9,13 +9,41 @@ generator db {
 }
 
 model User {
-    id        String   @id @default(cuid())
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
-    username  String @unique
-    email     String @unique
-    password  String
-    isTeacher Boolean  @default(false)
-    verified  Boolean  @default(false)
-    emailCode String   @default("6969")
+    id            String         @id @default(cuid())
+    createdAt     DateTime       @default(now())
+    updatedAt     DateTime       @updatedAt
+    username      String         @unique
+    email         String         @unique
+    password      String
+    isTeacher     Boolean        @default(false)
+    verified      Boolean        @default(false)
+    emailCode     String         @default("6969")
+    ledGroups     Group[]        @relation(name: "group_leader")
+    joinedGroups  Group[]        @relation("group_member")
+    waitingGroups Group[]        @relation("waiting_members")
+    RefreshToken  RefreshToken?
+}
+
+model Group {
+    id              String   @id @default(cuid())
+    createdAt       DateTime @default(now())
+    updatedAt       DateTime @updatedAt
+    name            String
+    codeLogin       Boolean
+    loginCode       String
+    requiresAproval Boolean
+    leader          User     @relation(fields: [leaderId], references: [id], name: "group_leader")
+    leaderId        String
+    members         User[]   @relation(fields: [memberIds], references: [id], name: "group_member")
+    memberIds       String
+    waitingMembers  User[]   @relation(fields: [waitingIds], references: [id], name: "waiting_members")
+    waitingIds      String
+}
+
+model RefreshToken {
+    id          String   @id @default(cuid())
+    createdAt   DateTime @default(now())
+    refreshedAt DateTime @updatedAt
+    owner       User     @relation(fields: [userId], references: [id])
+    userId      String
 }

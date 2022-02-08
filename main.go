@@ -3,14 +3,18 @@ package main
 import (
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"time"
 
 	"menta-backend/db"
+	"menta-backend/mail"
+	"menta-backend/middlewares"
 	"menta-backend/routes"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
+	"github.com/gofiber/fiber/v2/middleware/filesystem"
 	"github.com/gofiber/fiber/v2/middleware/limiter"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 )
@@ -26,6 +30,8 @@ func main() {
 	}))
 
 	app.Use(logger.New())
+
+	mail.InitDialer()
 
 	initRoutes(app.Group("/api"))
 
@@ -50,21 +56,18 @@ func initRoutes(r fiber.Router) {
 	auth.Put("/register", routes.HandleAuth_Register)
 	auth.Post("/login", routes.HandleAuth_Login)
 	auth.Get("/verify/:id/:code", routes.HandleAuth_Verify)
-	//TODO: add middleware
+	auth.Use(middlewares.NeedsRefreshToken)
 	auth.Post("/refresh", routes.HandleAuth_Refresh)
-	routes.InitAuthWs(auth)
 
 	user := r.Group("/user")
-	user.Get("/me", func(c *fiber.Ctx) error {
-		return c.JSON(fiber.Map{
-			"user": fiber.Map{
-				"id":        "ckz5vy1dy00021st5f2vqzkxo",
-				"createdAt": "2022-02-02T18:30:50.758Z",
-				"updatedAt": "2022-02-02T18:31:01.161Z",
-				"username":  "teszt69",
-				"email":     "cucc@gmail.com",
-				"isTeacher": false,
-			},
-		})
-	})
+	user.Use(middlewares.NeedsAuth)
+	user.Get("/me", routes.HandleUser_Me)
+
+	avatars := r.Group("/avatar")
+	avatars.Use(filesystem.New(filesystem.Config{
+		Root:         http.Dir(`./avatars`),
+		Browse:       false,
+		Index:        `default.svg`,
+		NotFoundFile: `default.svg`,
+	}))
 }
