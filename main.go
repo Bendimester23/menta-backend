@@ -62,6 +62,8 @@ func initRoutes(r fiber.Router) {
 	user := r.Group("/user")
 	user.Use(middlewares.NeedsAuth)
 	user.Get("/me", routes.HandleUser_Me)
+	user.Get(`/groups`, routes.HandleUser_Groups)
+	user.Get(`/join-group`, routes.HandleUser_JoinGroup)
 
 	avatars := r.Group("/avatar")
 	avatars.Use(filesystem.New(filesystem.Config{
@@ -70,4 +72,9 @@ func initRoutes(r fiber.Router) {
 		Index:        `default.svg`,
 		NotFoundFile: `default.svg`,
 	}))
+
+	group := r.Group("/group")
+	group.Use(middlewares.NeedsAuth)
+	group.Put("/create", routes.HandleGroup_Create)
+	group.Get(`/:id/`, routes.HandleGroup_ByID)
 }

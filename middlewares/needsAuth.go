@@ -9,11 +9,12 @@ import (
 )
 
 func NeedsAuth(c *fiber.Ctx) error {
-	tokenStr := c.Get(`Authorization`)[7:]
+	tokenStr := c.Get(`Authorization`)
 	if len(tokenStr) == 0 {
 		c.Locals(`auth`, false)
 		return c.Status(401).SendString(`no token provided`)
 	}
+	tokenStr = tokenStr[7:]
 
 	token, err := jwt.Parse(tokenStr, func(t *jwt.Token) (interface{}, error) {
 		return controller.AuthTokenSecret, nil

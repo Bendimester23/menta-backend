@@ -146,9 +146,23 @@ func (a AuthController) VerifyEmail(code, id string) *ErrorResponse {
 	return nil
 }
 
+func (a AuthController) UserById(id string) (*db.UserModel, *ErrorResponse) {
+	res, err := db.DB.User.FindFirst(
+		db.User.ID.Equals(id),
+	).Exec(ctx)
+	if err != nil {
+		return nil, &ErrorResponse{
+			Code:    500,
+			Message: "db error",
+		}
+	}
+	return res, nil
+}
+
 func (a AuthController) Login(data models.Login) (*db.UserModel, *ErrorResponse) {
 	res, err := db.DB.User.FindFirst(
 		db.User.Email.Equals(data.Email),
+		db.User.Verified.Equals(true),
 	).Exec(ctx)
 	if err != nil {
 		return nil, &ErrorResponse{
@@ -213,7 +227,7 @@ func (a AuthController) CreateRefreshToken(id string) (string, *ErrorResponse) {
 		"refresh_id": refresh.ID,
 	})
 
-	str, err := token.SignedString(AuthTokenSecret)
+	str, err := token.SignedString(RefreshTokenSecret)
 	if err != nil {
 		return "", &ErrorResponse{
 			Code:    500,

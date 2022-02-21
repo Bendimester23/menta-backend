@@ -78,9 +78,17 @@ func HandleAuth_Login(c *fiber.Ctx) error {
 }
 
 func HandleAuth_Refresh(c *fiber.Ctx) error {
+	user, err := authController.UserById(c.Locals(`id`).(string))
+	if err != nil {
+		return c.Status(err.Code).SendString(err.Message)
+	}
+
+	token, err := authController.CreateToken(user)
+	if err != nil {
+		return c.Status(err.Code).SendString(err.Message)
+	}
 	return c.JSON(fiber.Map{
-		"access_token":  "asd",
-		"refresh_token": "asd",
+		"access_token": token,
 	})
 }
 

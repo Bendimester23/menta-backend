@@ -9,35 +9,28 @@ generator db {
 }
 
 model User {
-    id            String         @id @default(cuid())
-    createdAt     DateTime       @default(now())
-    updatedAt     DateTime       @updatedAt
-    username      String         @unique
-    email         String         @unique
-    password      String
-    isTeacher     Boolean        @default(false)
-    verified      Boolean        @default(false)
-    emailCode     String         @default("6969")
-    ledGroups     Group[]        @relation(name: "group_leader")
-    joinedGroups  Group[]        @relation("group_member")
-    waitingGroups Group[]        @relation("waiting_members")
-    RefreshToken  RefreshToken?
+    id           String         @id @default(cuid())
+    createdAt    DateTime       @default(now())
+    updatedAt    DateTime       @updatedAt
+    username     String         @unique
+    email        String         @unique
+    password     String
+    isTeacher    Boolean        @default(false)
+    verified     Boolean        @default(false)
+    emailCode    String         @default("6969")
+    refreshToken RefreshToken[]
+    groups       GroupMember[]
 }
 
 model Group {
-    id              String   @id @default(cuid())
-    createdAt       DateTime @default(now())
-    updatedAt       DateTime @updatedAt
-    name            String
+    id              String        @id @default(cuid())
+    createdAt       DateTime      @default(now())
+    updatedAt       DateTime      @updatedAt
+    name            String        @unique
     codeLogin       Boolean
     loginCode       String
     requiresAproval Boolean
-    leader          User     @relation(fields: [leaderId], references: [id], name: "group_leader")
-    leaderId        String
-    members         User[]   @relation(fields: [memberIds], references: [id], name: "group_member")
-    memberIds       String
-    waitingMembers  User[]   @relation(fields: [waitingIds], references: [id], name: "waiting_members")
-    waitingIds      String
+    members         GroupMember[]
 }
 
 model RefreshToken {
@@ -45,5 +38,16 @@ model RefreshToken {
     createdAt   DateTime @default(now())
     refreshedAt DateTime @updatedAt
     owner       User     @relation(fields: [userId], references: [id])
-    userId      String
+    userId      String   @unique
+}
+
+model GroupMember {
+    group Group @relation(fields: [groupId], references: [id])
+    groupId String
+    user    User    @relation(fields: [userId], references: [id])
+    userId  String
+    waiting Boolean
+    leader  Boolean
+
+    @@id([groupId, userId])
 }
