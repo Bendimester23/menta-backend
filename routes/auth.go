@@ -1,9 +1,11 @@
 package routes
 
 import (
+	"fmt"
 	"log"
 	"menta-backend/controller"
 	"menta-backend/models"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/websocket/v2"
@@ -78,15 +80,19 @@ func HandleAuth_Login(c *fiber.Ctx) error {
 }
 
 func HandleAuth_Refresh(c *fiber.Ctx) error {
+	start1 := time.Now().UnixMilli()
 	user, err := authController.UserById(c.Locals(`id`).(string))
 	if err != nil {
 		return c.Status(err.Code).SendString(err.Message)
 	}
+	c.Append("Server-Timings", fmt.Sprintf("fetchUser;dur=%dms;", time.Now().UnixMilli()-start1))
+	start1 = time.Now().UnixMilli()
 
 	token, err := authController.CreateToken(user)
 	if err != nil {
 		return c.Status(err.Code).SendString(err.Message)
 	}
+	c.Append("Server-Timings", fmt.Sprintf("createToken;dur=%dms;", time.Now().UnixMilli()-start1))
 	return c.JSON(fiber.Map{
 		"access_token": token,
 	})

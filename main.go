@@ -29,6 +29,18 @@ func main() {
 		AllowOrigins: "*",
 	}))
 
+	app.Use(func(c *fiber.Ctx) error {
+		// start timer
+		start := time.Now().UnixMilli()
+		// next routes
+		err := c.Next()
+		// stop timer
+		stop := time.Now().UnixMilli()
+		// Do something with response
+		c.Append("Server-timing", fmt.Sprintf("app;dur=%vms", stop-start))
+		return err
+	})
+
 	app.Use(logger.New())
 
 	mail.InitDialer()

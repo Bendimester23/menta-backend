@@ -1,6 +1,6 @@
 datasource db {
     provider = "postgres"
-    url      = "postgresql://bm:CPgjRwY4Lrqu6gk@zeus.bendi.cf:5432/bluementa"
+    url      = "postgresql://postgres:admin@localhost:5432/bluementa"
 }
 
 generator db {
@@ -20,6 +20,7 @@ model User {
     emailCode    String         @default("6969")
     refreshToken RefreshToken[]
     groups       GroupMember[]
+    solutions    SolvedExam[]
 }
 
 model Group {
@@ -31,6 +32,7 @@ model Group {
     loginCode       String
     requiresAproval Boolean
     members         GroupMember[]
+    exams           Exam[]
 }
 
 model RefreshToken {
@@ -42,7 +44,7 @@ model RefreshToken {
 }
 
 model GroupMember {
-    group Group @relation(fields: [groupId], references: [id])
+    group   Group   @relation(fields: [groupId], references: [id])
     groupId String
     user    User    @relation(fields: [userId], references: [id])
     userId  String
@@ -50,4 +52,32 @@ model GroupMember {
     leader  Boolean
 
     @@id([groupId, userId])
+}
+
+model SolvedExam {
+    user   User   @relation(fields: [userId], references: [id])
+    userId String
+    exam   Exam   @relation(fields: [examId], references: [id])
+    examId String
+
+    answers  Json
+    started  DateTime
+    finished DateTime
+
+    @@id([examId, userId])
+}
+
+model Exam {
+    id          String   @id @default(cuid())
+    group       Group    @relation(fields: [groupId], references: [id])
+    groupId     String
+    title       String
+    description String
+    questions   Json
+    answers     Json
+    startsAt    DateTime
+    endsAt      DateTime
+    maxLenght   Int
+
+    solutions SolvedExam[]
 }

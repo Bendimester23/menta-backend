@@ -60,6 +60,11 @@ func NeedsRefreshToken(c *fiber.Ctx) error {
 		return c.Status(500).SendString(`db error`)
 	}
 
+	if len(res) == 0 {
+		c.Locals(`auth`, false)
+		return c.Status(401).SendString(`invalid token provided`)
+	}
+
 	c.Locals(`auth`, true)
 	c.Locals(`id`, res[0].Owner().ID)
 	c.Locals(`username`, res[0].Owner().Username)

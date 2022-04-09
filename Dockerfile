@@ -18,13 +18,8 @@ WORKDIR /app
 
 ENV PORT=8080
 ENV MODE=prod
-ENV EMAIL_HOST=zeus.bendi.cf
-ENV EMAIL_USER=apikey
-ENV EMAIL_PASS=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
-ENV EMAIL_PORT=1025
+ENV EMAIL_HOST=172.19.0.2
 
 COPY --from=build /go/src/app/app .
-
-EXPOSE ${PORT}
 
 CMD ["./app"]
