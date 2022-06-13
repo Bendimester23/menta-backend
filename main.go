@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"math/rand"
 	"net/http"
 	"os"
 	"time"
@@ -17,9 +18,11 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/filesystem"
 	"github.com/gofiber/fiber/v2/middleware/limiter"
 	"github.com/gofiber/fiber/v2/middleware/logger"
+	"github.com/gofiber/fiber/v2/middleware/recover"
 )
 
 func main() {
+	rand.Seed(time.Now().Unix())
 	app := fiber.New()
 
 	db.Connect()
@@ -30,33 +33,31 @@ func main() {
 	}))
 
 	app.Use(func(c *fiber.Ctx) error {
-		// start timer
-		start := time.Now().UnixMilli()
-		// next routes
+		start := time.Now()
+
 		err := c.Next()
-		// stop timer
-		stop := time.Now().UnixMilli()
-		// Do something with response
-		c.Append("Server-timing", fmt.Sprintf("app;dur=%vms", stop-start))
+
+		c.Set("Server-timing", fmt.Sprintf("app;dur=%vms", time.Since(start).Milliseconds()))
 		return err
 	})
 
 	app.Use(logger.New())
+	app.Use(recover.New())
 
 	mail.InitDialer()
 
 	initRoutes(app.Group("/api"))
 
-	if err := app.Listen(fmt.Sprintf(":%s", getPort())); err != nil {
+	if err := app.Listen(getPort()); err != nil {
 		log.Fatalln(err)
 	}
 }
 
 func getPort() string {
 	if os.Getenv("PORT") == "" {
-		return "8080"
+		return ":8080"
 	}
-	return os.Getenv("PORT")
+	return fmt.Sprintf(":%s", os.Getenv("PORT"))
 }
 
 func initRoutes(r fiber.Router) {
@@ -89,4 +90,8 @@ func initRoutes(r fiber.Router) {
 	group.Use(middlewares.NeedsAuth)
 	group.Put("/create", routes.HandleGroup_Create)
 	group.Get(`/:id/`, routes.HandleGroup_ByID)
+	group.Put(`/:id/exams`, routes.HandleGroup_CreateExam)
+	group.Get(`/:id/exams`, routes.HandleGroup_GetExams)
+	group.Get(`/:id/exams/:eid`, routes.HandleGroup_GetExamById)
+	group.Delete(`/:id/exams/:eid`, routes.HandleGroup_DeleteExam)
 }

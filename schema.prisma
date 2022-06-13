@@ -48,6 +48,7 @@ model GroupMember {
     groupId String
     user    User    @relation(fields: [userId], references: [id])
     userId  String
+    joinedAt DateTime @default(now())
     waiting Boolean
     leader  Boolean
 
@@ -78,6 +79,8 @@ model Exam {
     startsAt    DateTime
     endsAt      DateTime
     maxLenght   Int
+    show Boolean @default(false)
+    showResults Boolean @default(false)
 
     solutions SolvedExam[]
 }
