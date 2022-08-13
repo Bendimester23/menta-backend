@@ -21,6 +21,7 @@ model User {
     refreshToken RefreshToken[]
     groups       GroupMember[]
     solutions    SolvedExam[]
+    schools      SchoolMember[]
 }
 
 model Group {
@@ -33,6 +34,8 @@ model Group {
     requiresAproval Boolean
     members         GroupMember[]
     exams           Exam[]
+    school          School?       @relation(fields: [schoolId], references: [id])
+    schoolId        String
 }
 
 model RefreshToken {
@@ -44,13 +47,13 @@ model RefreshToken {
 }
 
 model GroupMember {
-    group   Group   @relation(fields: [groupId], references: [id])
-    groupId String
-    user    User    @relation(fields: [userId], references: [id])
-    userId  String
+    group    Group    @relation(fields: [groupId], references: [id])
+    groupId  String
+    user     User     @relation(fields: [userId], references: [id])
+    userId   String
     joinedAt DateTime @default(now())
-    waiting Boolean
-    leader  Boolean
+    waiting  Boolean
+    leader   Boolean
 
     @@id([groupId, userId])
 }
@@ -79,8 +82,29 @@ model Exam {
     startsAt    DateTime
     endsAt      DateTime
     maxLenght   Int
-    show Boolean @default(false)
-    showResults Boolean @default(false)
+    show        Boolean  @default(false)
+    showResults Boolean  @default(false)
 
     solutions SolvedExam[]
+}
+
+model School {
+    id   String @id @default(cuid())
+    name String
+
+    code String
+
+    members SchoolMember[]
+    groups  Group[]
+}
+
+model SchoolMember {
+    user     User   @relation(fields: [userId], references: [id])
+    userId   String
+    school   School @relation(fields: [schoolId], references: [id])
+    schoolId String
+
+    isTeacher Boolean
+
+    @@id([userId, schoolId])
 }

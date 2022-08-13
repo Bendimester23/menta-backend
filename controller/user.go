@@ -50,7 +50,7 @@ type EvenSimplerGroup struct {
 	Name      string       `json:"name"`
 	Leader    SimpleMember `json:"leader"`
 	IsLeader  bool         `json:"is_leader"`
-	isWaiting bool         `json:"is_waiting"`
+	IsWaiting bool         `json:"is_waiting"`
 }
 
 func (u UserController) GetGroups(id string) (*[]EvenSimplerGroup, *ErrorResponse) {
@@ -80,7 +80,7 @@ func (u UserController) GetGroups(id string) (*[]EvenSimplerGroup, *ErrorRespons
 		l := g.Members()[0].User()
 		groups = append(groups, EvenSimplerGroup{
 			ID:        g.ID,
-			isWaiting: v.Waiting,
+			IsWaiting: v.Waiting,
 			IsLeader:  v.Leader,
 			Name:      g.Name,
 			Leader: SimpleMember{

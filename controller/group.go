@@ -439,6 +439,80 @@ func (g *GroupController) DeleteExam(userId string, groupId string, examId strin
 	return nil
 }
 
+func (g *GroupController) DeleteGroup(userId string, groupId string) *ErrorResponse {
+	member, err := db.DB.GroupMember.FindFirst(
+		db.GroupMember.User.Where(
+			db.User.ID.Equals(userId),
+		),
+		db.GroupMember.Group.Where(
+			db.Group.ID.Equals(groupId),
+		),
+	).Exec(ctx)
+
+	if err != nil {
+		if errors.Is(err, db.ErrNotFound) {
+			return &ErrorResponse{
+				Code:    403,
+				Message: "You don't have permission to access this group!",
+			}
+		}
+		log.Println(err.Error())
+		return &ErrorResponse{
+			Code:    500,
+			Message: "DB error!",
+		}
+	}
+
+	if !member.Leader {
+		return &ErrorResponse{
+			Code:    403,
+			Message: "You don't have permission to do this!",
+		}
+	}
+
+	_, err = db.DB.Exam.FindMany(
+		db.Exam.Group.Where(
+			db.Group.ID.Equals(groupId),
+		),
+	).Delete().Exec(ctx)
+
+	if err != nil && !errors.Is(err, db.ErrNotFound) {
+		log.Println(err.Error())
+		return &ErrorResponse{
+			Code:    500,
+			Message: "DB error!",
+		}
+	}
+
+	_, err = db.DB.GroupMember.FindMany(
+		db.GroupMember.Group.Where(
+			db.Group.ID.Equals(groupId),
+		),
+	).Delete().Exec(ctx)
+
+	if err != nil && !errors.Is(err, db.ErrNotFound) {
+		log.Println(err.Error())
+		return &ErrorResponse{
+			Code:    500,
+			Message: "DB error!",
+		}
+	}
+
+	_, err = db.DB.Group.FindMany(
+		db.Group.ID.Equals(groupId),
+	).Delete().Exec(ctx)
+
+	if err != nil && !errors.Is(err, db.ErrNotFound) {
+		log.Println(err.Error())
+		return &ErrorResponse{
+			Code:    500,
+			Message: "DB error!",
+		}
+	}
+
+	return nil
+}
+
 var firstChar = strings.Split("QWERTZUIOPASDFGHJKLYXCVBNM", "")
 var normalChar = strings.Split("QWERTZUIOPASDFGHJKLYXCVBNMqwertzuiopasdfghjklyxcvbnm0123456789", "")
 

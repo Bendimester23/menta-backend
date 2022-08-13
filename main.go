@@ -18,7 +18,6 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/filesystem"
 	"github.com/gofiber/fiber/v2/middleware/limiter"
 	"github.com/gofiber/fiber/v2/middleware/logger"
-	"github.com/gofiber/fiber/v2/middleware/recover"
 )
 
 func main() {
@@ -42,7 +41,7 @@ func main() {
 	})
 
 	app.Use(logger.New())
-	app.Use(recover.New())
+	//app.Use(recover.New())
 
 	mail.InitDialer()
 
@@ -90,6 +89,7 @@ func initRoutes(r fiber.Router) {
 	group.Use(middlewares.NeedsAuth)
 	group.Put("/create", routes.HandleGroup_Create)
 	group.Get(`/:id/`, routes.HandleGroup_ByID)
+	group.Delete(`/:id/`, routes.HandleGroup_Delete)
 	group.Put(`/:id/exams`, routes.HandleGroup_CreateExam)
 	group.Get(`/:id/exams`, routes.HandleGroup_GetExams)
 	group.Get(`/:id/exams/:eid`, routes.HandleGroup_GetExamById)

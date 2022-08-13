@@ -29,6 +29,14 @@ func HandleGroup_Create(c *fiber.Ctx) error {
 	return c.JSON(res)
 }
 
+func HandleGroup_Delete(c *fiber.Ctx) error {
+	if err := groupController.DeleteGroup(c.Locals(`id`).(string), c.Params(`id`)); err != nil {
+		return c.Status(err.Code).SendString(err.Message)
+	}
+
+	return c.SendString("success")
+}
+
 func HandleGroup_ByID(c *fiber.Ctx) error {
 	res, err := groupController.ById(c.Params(`id`), true)
 	if err != nil {
