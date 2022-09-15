@@ -18,6 +18,8 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/filesystem"
 	"github.com/gofiber/fiber/v2/middleware/limiter"
 	"github.com/gofiber/fiber/v2/middleware/logger"
+	"github.com/gofiber/fiber/v2/middleware/recover"
+	"github.com/gofiber/websocket/v2"
 )
 
 func main() {
@@ -41,7 +43,7 @@ func main() {
 	})
 
 	app.Use(logger.New())
-	//app.Use(recover.New())
+	app.Use(recover.New())
 
 	mail.InitDialer()
 
@@ -94,4 +96,18 @@ func initRoutes(r fiber.Router) {
 	group.Get(`/:id/exams`, routes.HandleGroup_GetExams)
 	group.Get(`/:id/exams/:eid`, routes.HandleGroup_GetExamById)
 	group.Delete(`/:id/exams/:eid`, routes.HandleGroup_DeleteExam)
+
+	ws := r.Group("/ws")
+	ws.Use("/", func(c *fiber.Ctx) error {
+		if websocket.IsWebSocketUpgrade(c) {
+			c.Locals("allowed", true)
+			return c.Next()
+		}
+		return fiber.ErrUpgradeRequired
+	})
+	ws.Get("/", websocket.New(routes.HandleWs))
+
+	chat := r.Group("/chat")
+	chat.Use(middlewares.NeedsAuth)
+	chat.Get("/:id/messages", routes.HandleChat_GetMessages)
 }

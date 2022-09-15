@@ -101,6 +101,8 @@ func (u UserController) JoinGroup(userId, groupCode string) *ErrorResponse {
 	group, err := db.DB.Group.FindFirst(
 		db.Group.CodeLogin.Equals(true),
 		db.Group.LoginCode.Equals(groupCode),
+	).With(
+		db.Group.Room.Fetch(),
 	).Exec(ctx)
 
 	if err != nil {
@@ -131,6 +133,23 @@ func (u UserController) JoinGroup(userId, groupCode string) *ErrorResponse {
 		),
 		db.GroupMember.Waiting.Set(group.RequiresAproval),
 		db.GroupMember.Leader.Set(false),
+	).Exec(ctx)
+
+	if err != nil {
+		return &ErrorResponse{
+			Code:    500,
+			Message: `db error`,
+		}
+	}
+
+	_, err = db.DB.ChatMember.CreateOne(
+		db.ChatMember.User.Link(
+			db.User.ID.Equals(userId),
+		),
+		db.ChatMember.Room.Link(
+			db.ChatRoom.ID.Equals(group.Room().ID),
+		),
+		db.ChatMember.Nickname.Set(""),
 	).Exec(ctx)
 
 	if err != nil {

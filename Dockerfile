@@ -6,9 +6,11 @@ COPY . .
 
 RUN go mod download
 
+RUN go run github.com/prisma/prisma-client-go generate
+
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -installsuffix cgo -o app .
 
-FROM centurylink/ca-certs
+FROM scratch
 
 WORKDIR /app
 

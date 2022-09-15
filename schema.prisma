@@ -1,6 +1,6 @@
 datasource db {
     provider = "postgres"
-    url      = "postgresql://postgres:admin@localhost:5432/bluementa"
+    url      = env("DATABASE_URL")
 }
 
 generator db {
@@ -22,6 +22,8 @@ model User {
     groups       GroupMember[]
     solutions    SolvedExam[]
     schools      SchoolMember[]
+    chatMessages ChatMessage[]
+    chats        ChatMember[]
 }
 
 model Group {
@@ -35,7 +37,9 @@ model Group {
     members         GroupMember[]
     exams           Exam[]
     school          School?       @relation(fields: [schoolId], references: [id])
-    schoolId        String
+    schoolId        String?
+    room            ChatRoom      @relation(fields: [roomId], references: [id])
+    roomId          String        @default("")
 }
 
 model RefreshToken {
@@ -107,4 +111,37 @@ model SchoolMember {
     isTeacher Boolean
 
     @@id([userId, schoolId])
+}
+
+model ChatMessage {
+    id          String   @id @default(cuid())
+    createdAt   DateTime @default(now())
+    refreshedAt DateTime @updatedAt
+    author      User     @relation(fields: [authorId], references: [id])
+    authorId    String
+    content     String
+    room        ChatRoom @relation(fields: [roomId], references: [id])
+    roomId      String
+}
+
+model ChatMember {
+    user   User   @relation(references: [id], fields: [userId])
+    userId String
+
+    room   ChatRoom @relation(fields: [roomId], references: [id])
+    roomId String
+
+    nickname String
+
+    @@id([userId, roomId])
+}
+
+model ChatRoom {
+    id          String        @id @default(cuid())
+    createdAt   DateTime      @default(now())
+    refreshedAt DateTime      @updatedAt
+    messages    ChatMessage[]
+    members     ChatMember[]
+    description String
+    groups      Group[]
 }

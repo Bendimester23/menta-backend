@@ -13,5 +13,6 @@ func InitDialer() {
 }
 
 func SendMessage(m *gomail.Message) error {
-	return dialer.DialAndSend(m)
+	//return dialer.DialAndSend(m)
+	return nil
 }

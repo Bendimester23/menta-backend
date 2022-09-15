@@ -37,6 +37,7 @@ func (a AuthController) RegisterUser(data models.Register) (*db.UserModel, *Erro
 		),
 	).Exec(ctx)
 	if err != nil {
+		log.Println(err.Error())
 		return nil, &ErrorResponse{
 			Code:    500,
 			Message: "db error",
@@ -77,6 +78,7 @@ func (a AuthController) RegisterUser(data models.Register) (*db.UserModel, *Erro
 	log.Println(mail.SendMessage(m))
 
 	if err != nil {
+		log.Println(err.Error())
 		return nil, &ErrorResponse{
 			Code:    500,
 			Message: "Db error",

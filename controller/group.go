@@ -22,13 +22,25 @@ func (g GroupController) Create(leaderId string, data models.CreateGroup) (*db.G
 		loginCode = data.CodePrefix + "_" + g.GenerateLoginCode()
 	}
 
-	log.Println(data)
+	chat, err := db.DB.ChatRoom.CreateOne(
+		db.ChatRoom.Description.Set(`szoba cucc`),
+	).Exec(ctx)
+	if err != nil {
+		log.Println(err)
+		return nil, &ErrorResponse{
+			Code:    500,
+			Message: "db error",
+		}
+	}
 
 	res, err := db.DB.Group.CreateOne(
 		db.Group.Name.Set(data.Name),
 		db.Group.CodeLogin.Set(data.JoinWithCode),
 		db.Group.LoginCode.Set(loginCode),
 		db.Group.RequiresAproval.Set(data.LimitJoins),
+		db.Group.Room.Link(
+			db.ChatRoom.ID.Equals(chat.ID),
+		),
 	).Exec(ctx)
 
 	if err != nil {
@@ -58,6 +70,23 @@ func (g GroupController) Create(leaderId string, data models.CreateGroup) (*db.G
 		}
 	}
 
+	_, err = db.DB.ChatMember.CreateOne(
+		db.ChatMember.User.Link(
+			db.User.ID.Equals(leaderId),
+		),
+		db.ChatMember.Room.Link(
+			db.ChatRoom.ID.Equals(chat.ID),
+		),
+		db.ChatMember.Nickname.Set(""),
+	).Exec(ctx)
+
+	if err != nil {
+		return nil, &ErrorResponse{
+			Code:    500,
+			Message: `db error`,
+		}
+	}
+
 	return res, nil
 }
 
@@ -70,6 +99,8 @@ type SimpleGroup struct {
 	LoginCode       string         `json:"loginCode"`
 	RequiresAproval bool           `json:"requiresAproval"`
 	Members         []SimpleMember `json:"members"`
+	RoomId          string         `json:"roomId"`
+	RoomName        string         `json:"roomName"`
 }
 
 type SimpleMember struct {
@@ -89,6 +120,7 @@ func (g GroupController) ById(id string, isLeader bool) (*SimpleGroup, *ErrorRes
 		db.Group.Members.Fetch().With(
 			db.GroupMember.User.Fetch(),
 		),
+		db.Group.Room.Fetch(),
 	).Exec(ctx)
 
 	if err != nil {
@@ -134,6 +166,8 @@ func (g GroupController) ById(id string, isLeader bool) (*SimpleGroup, *ErrorRes
 		LoginCode:       res.LoginCode,
 		RequiresAproval: res.RequiresAproval,
 		Members:         r,
+		RoomId:          res.RoomID,
+		RoomName:        res.Room().Description,
 	}, nil
 }
 
@@ -470,6 +504,20 @@ func (g *GroupController) DeleteGroup(userId string, groupId string) *ErrorRespo
 		}
 	}
 
+	group, err := db.DB.Group.FindFirst(
+		db.Group.ID.Equals(groupId),
+	).With(
+		db.Group.Room.Fetch(),
+	).Exec(ctx)
+
+	if err != nil {
+		log.Println(err.Error())
+		return &ErrorResponse{
+			Code:    500,
+			Message: "DB error!",
+		}
+	}
+
 	_, err = db.DB.Exam.FindMany(
 		db.Exam.Group.Where(
 			db.Group.ID.Equals(groupId),
@@ -500,6 +548,32 @@ func (g *GroupController) DeleteGroup(userId string, groupId string) *ErrorRespo
 
 	_, err = db.DB.Group.FindMany(
 		db.Group.ID.Equals(groupId),
+	).Delete().Exec(ctx)
+
+	if err != nil && !errors.Is(err, db.ErrNotFound) {
+		log.Println(err.Error())
+		return &ErrorResponse{
+			Code:    500,
+			Message: "DB error!",
+		}
+	}
+
+	_, err = db.DB.ChatMember.FindMany(
+		db.ChatMember.Room.Where(
+			db.ChatRoom.ID.Equals(group.RoomID),
+		),
+	).Delete().Exec(ctx)
+
+	if err != nil && !errors.Is(err, db.ErrNotFound) {
+		log.Println(err.Error())
+		return &ErrorResponse{
+			Code:    500,
+			Message: "DB error!",
+		}
+	}
+
+	_, err = db.DB.ChatRoom.FindMany(
+		db.ChatRoom.ID.Equals(group.RoomID),
 	).Delete().Exec(ctx)
 
 	if err != nil && !errors.Is(err, db.ErrNotFound) {
